@@ -1,0 +1,67 @@
+---
+title: "73% of tickets resolved without human review"
+excerpt: "A Series B fintech replaced three full-time support agents with one AI agent that autonomously handles the majority of their customer ticket volume."
+date: "2026-02-20"
+industry: "Fintech"
+service: "AI Agents"
+featured: true
+metrics:
+  - label: "Tickets resolved autonomously"
+    value: "73%"
+    unit: ""
+  - label: "Average resolution time"
+    value: "4 min"
+    unit: "was 4 hours"
+  - label: "Agents replaced"
+    value: "3"
+    unit: "FTEs"
+  - label: "Uptime"
+    value: "99.4%"
+    unit: "trailing 90d"
+---
+
+## The Challenge
+
+This Series B fintech was processing more than 400 customer support tickets per day. Their support team — three full-time agents — was working through a queue that never got shorter. Average response time had crept up to four hours, and customer satisfaction scores were declining.
+
+When we looked at the ticket data, the pattern was clear immediately: roughly 12 question types accounted for more than 70% of incoming volume. Transaction status inquiries. Password reset walkthroughs. Card dispute initiation. Fee explanation requests. These questions had known, consistent answers. The agents knew the answers by heart. They were spending the majority of their working hours typing variations of the same twelve responses.
+
+The three agents weren't doing support work. They were doing data retrieval and text formatting. That's an automation problem.
+
+## What We Built
+
+We built an agent that sits between Zendesk and the customer, handling the common-category tickets autonomously and escalating everything else to the human team with a pre-written summary.
+
+The flow is straightforward. When a ticket lands in Zendesk, a webhook fires to the agent. The agent reads the ticket — the subject line, the body, any prior conversation history in the thread — and classifies it against the 12 known categories. If the classification confidence is below a defined threshold, the ticket goes straight to the human queue with a note explaining what the classifier was uncertain about.
+
+For tickets that classify with high confidence, the agent retrieves relevant context from the company's knowledge base. That knowledge base lives in Pinecone: all the product documentation, policy documents, and verified answer templates, chunked and embedded so the agent can retrieve the most relevant sections for the specific question being asked.
+
+With the context retrieved, the agent generates a response draft using Claude. The draft isn't raw model output — it's post-processed through a policy rule layer that checks for prohibited content (competitor mentions, pricing claims without approval flags, anything that requires compliance sign-off) and applies the company's voice guidelines. Only drafts that pass the policy check get sent. Anything that fails gets escalated with the draft included, so the human agent can review and edit rather than start from scratch.
+
+## The Technical Implementation
+
+The architecture breaks down into four stages:
+
+**Ingestion.** Zendesk's webhook pushes new ticket events to an endpoint we control. The agent receives the ticket payload, normalizes it, and begins processing.
+
+**Classification and retrieval.** A lightweight classification step categorizes the ticket. Classification confidence gates whether the ticket is handled or escalated. For handled tickets, the agent queries Pinecone with an embedding of the ticket text, retrieves the top-k chunks from the knowledge base, and assembles the context window.
+
+**Generation and policy.** Claude generates a response given the ticket, the retrieved context, and a system prompt encoding the company's response style and escalation criteria. The output goes through the policy rule layer before any action is taken.
+
+**Action.** Clean responses are sent directly through the Zendesk API. Escalations are routed to the appropriate agent queue with a structured summary: ticket category, confidence score, what the agent would have said, and why it escalated.
+
+The entire pipeline runs in under 4 minutes for the typical ticket. The p95 is still under 8 minutes.
+
+## The Results
+
+Within the first 30 days, 73% of tickets were being resolved autonomously. The average resolution time dropped from four hours to four minutes. The three support agents, rather than being let go, were reassigned to handle the escalated queue — the genuinely complex cases, the high-value customers, the disputes requiring judgment. Their job got harder in the right way.
+
+The human escalation rate is currently 27%, which means every escalated ticket is one that actually needed a human. The agents aren't touching routine questions anymore.
+
+Uptime over the trailing 90 days has been 99.4%. The two outages were brief API timeouts on Zendesk's side, not failures in the agent itself.
+
+---
+
+> "We replaced 3 full-time support agents with one AI agent that resolves 73% of tickets autonomously. The agents we have left are doing real work — escalations that actually need a human. The mundane stuff just disappears."
+>
+> — VP of Operations

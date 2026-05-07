@@ -1,0 +1,74 @@
+---
+title: "The workflow automation playbook: from manual to autonomous"
+excerpt: "A step-by-step process for identifying which workflows to automate first, scoping the automation correctly, and shipping it without breaking what already works."
+date: "2026-03-28"
+author: "Sara Reyes"
+tag: "Process"
+featured: false
+---
+
+Most workflow automation projects fail the same way: someone picks the wrong thing to automate first, scopes it too ambitiously, and when the project overruns and doesn't deliver clean results, leadership loses appetite for the next attempt.
+
+The problem is usually not the technology. It's the selection and scoping process. Here's how we approach it.
+
+## Which workflows are worth automating
+
+Not every manual workflow is a good automation candidate. The ones that consistently deliver strong ROI share three characteristics:
+
+**High volume.** If a workflow runs twenty times a week, automating it has twenty times the leverage of one that runs twice. Volume is the multiplier on everything else. A workflow that saves five minutes per instance is worth three hours a week if it runs daily; it's nearly worthless if it runs monthly.
+
+**Repetitive structure.** Automation handles the consistent thing well and the exceptional thing badly. Look for workflows where the input arrives in a predictable shape and the correct response follows predictable rules. Workflows that require human judgment on most inputs are poor candidates — not because automation can't help at all, but because the return doesn't justify the complexity.
+
+**Rule-based decision logic.** The strongest automation candidates are ones where, if you wrote down the rules a human follows to make the decision, another human could follow those rules and get the same answer. "If the invoice amount matches the PO within 5%, approve it" is automatable. "Use your judgment about whether this customer seems worth escalating" is not.
+
+Start by listing every repeating workflow in the part of the business you're targeting. Score each one on volume, repeatability, and rule clarity. The top scorers are your candidates.
+
+## Scoping the automation correctly
+
+Once you've selected a workflow, the scoping process matters more than any technical decision you'll make. Two rules we follow without exception:
+
+**Map the happy path first.** Before you touch edge cases, document exactly what happens when everything goes correctly. Step by step. What is the input? What does the human do with it? What systems do they touch? What is the output? This forces you to understand the workflow before you automate it, and it gives you a clear definition of success.
+
+**Then enumerate the edge cases.** After the happy path is clear, systematically ask: what inputs could arrive that break the assumptions in each step? What happens when a required field is missing? What happens when a referenced record doesn't exist? What happens when the input format is slightly wrong? Document these not to automate them, but to decide how to handle them. Most edge cases should trigger a human escalation, at least initially. The automation handles the common path; humans handle the exceptions.
+
+The mistake most teams make is trying to scope the automation to handle every case from day one. That way lies scope creep and missed deadlines. Automate the ninety percent case. Build the escalation path for everything else. You can always reduce the escalation rate later.
+
+## Automate the boring middle
+
+Here's a counterintuitive principle that consistently improves automation outcomes: don't automate the beginning or end of a workflow. Automate the middle.
+
+The beginning of a workflow is usually where context arrives — a customer sends a message, a file lands in a folder, a form is submitted. Humans are already good at receiving inputs. The end of a workflow usually involves a decision or communication that benefits from human review, especially early in an automation's lifecycle.
+
+The middle — the data extraction, the lookup, the validation, the routing, the drafting — is where automation delivers the most value with the least risk. A human still reviews the output before it goes out, but they're reviewing in seconds rather than doing the work themselves.
+
+This "automate the middle" pattern is also much easier to scope and test. You have a clear input (what the human hands to the automation) and a clear output (what the automation hands back), and you can validate that the transformation is correct before you ever expose it to real users.
+
+## Building the safety net
+
+Any automation that handles real workflows needs three things before it goes to production:
+
+**Audit logs.** Every action the automation takes should be logged: what input came in, what the automation did with it, what output it produced, and when. Not just for debugging — for accountability. When a customer asks why they received a certain response, you need to be able to trace exactly what the automation saw and did.
+
+**Human escalation paths.** Define the conditions under which the automation routes to a human. These should be explicit, not implicit. "Confidence below 85%" is explicit. "When the automation isn't sure" is not. Build the escalation path before you build the automation, and test it. Escalation is not a failure state — it's a feature.
+
+**Error alerts.** When the automation fails — not escalates, but actually fails, with an exception — someone needs to know immediately. Don't let errors accumulate silently in a log file. A Slack alert or email notification for error spikes is not optional. You'll almost certainly catch your first real production issue because an alert fired, not because you happened to look at the logs.
+
+## How to measure success
+
+Define your success metrics before you ship, not after. The metrics that consistently matter:
+
+**Time saved per instance.** Measure the wall-clock time of the manual process before automation. Measure the time required with automation (including human review time if you kept humans in the loop). The difference is your per-instance savings.
+
+**Error rate.** What percentage of instances does the automation handle incorrectly, requiring correction? Track this from day one. A rising error rate is an early warning signal.
+
+**Escalation rate.** What percentage of instances does the automation route to humans? This number should decrease over time as you tune the automation. If it's increasing, the automation is encountering more inputs it can't handle — which means your input distribution is shifting or your confidence thresholds are wrong.
+
+You can calculate ROI straightforwardly: time saved per instance multiplied by instance volume multiplied by the cost per hour of the humans doing that work. That number is what you report to leadership.
+
+## Ship the automation that works
+
+The perfect automation that handles every edge case and never escalates anything is always six months away. The automation that handles 85% of cases, escalates the rest, and is running in production next week is worth ten times more.
+
+The goal of the first deployment is to prove the concept works, get real data on where it breaks, and establish trust with the team that will rely on it. You build on that foundation. You don't try to build the final version first.
+
+Automation compounds. Every workflow you ship teaches you something about the next one. The teams that are most automated in two years are the ones who shipped something imperfect in the next two weeks — and then kept going.

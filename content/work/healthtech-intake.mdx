@@ -1,0 +1,49 @@
+---
+title: "Patient intake processing: 22 minutes to 90 seconds"
+excerpt: "A digital health company eliminated their manual intake bottleneck by deploying an agent that processes, validates, and routes patient forms in under 2 minutes."
+date: "2026-01-15"
+industry: "Healthtech"
+service: "Workflow Automation"
+featured: false
+metrics:
+  - label: "Processing time"
+    value: "90 sec"
+    unit: "was 22 min"
+  - label: "Manual steps eliminated"
+    value: "8 of 11"
+    unit: ""
+  - label: "Data accuracy"
+    value: "99.1%"
+    unit: ""
+  - label: "Forms/day capacity"
+    value: "3×"
+    unit: "increase"
+---
+
+## The Challenge
+
+A digital health company was processing new patient intake forms manually. When a patient submitted their intake packet — demographic information, insurance details, medical history questionnaire, consent forms — it landed in an administrative queue where staff would work through it step by step.
+
+The manual process had eleven distinct steps: open the form, read the patient's demographic data, enter it into the EHR, pull the insurance information, verify the insurance ID format, check for missing required fields, flag any inconsistencies between fields, determine the appropriate care team based on the chief complaint, draft a handoff note to that team, file the completed form, and send the patient a confirmation.
+
+That eleven-step process took an average of 22 minutes per patient when done correctly. When staff were under pressure — which was most of the time — steps got skipped, data entry errors crept in, and forms sat in the queue longer than they should. The team was the bottleneck on their own growth. New patient volume was constrained not by demand but by how many forms their admin staff could process in a day.
+
+## What We Built
+
+We built an automated intake processing pipeline that handles eight of the eleven steps without human involvement, leaving the three steps requiring clinical judgment to the care team that picks up the handoff.
+
+When a patient submits their intake form through the company's web portal, the form payload is passed to the processing pipeline. The pipeline first extracts and normalizes the structured fields — name, date of birth, contact information, insurance carrier and ID — and validates them against a set of business rules: required fields present, date formats valid, insurance ID matching the carrier's known format patterns, no obvious inconsistencies between the chief complaint field and the medical history checkboxes.
+
+Forms that pass validation are automatically routed to the correct care team based on a classification of the chief complaint. The routing logic encodes the same rules the admin team was applying manually, expressed as a decision tree the system evaluates deterministically. The output is a structured handoff record in the EHR, pre-populated with all the extracted patient data, and a confirmation email sent to the patient.
+
+Forms that fail validation — missing required fields, format errors, inconsistencies the system can't resolve — are routed to the admin queue with a structured exception report. The staff member sees exactly what failed and what needs correction, rather than having to re-read the entire form to find the problem.
+
+## Results
+
+Processing time for a standard intake form dropped from 22 minutes to 90 seconds. The 90 seconds is primarily the time for the system to parse, validate, and write the record — there's no manual data entry time in that number.
+
+Eight of the eleven steps are now fully automated. The three remaining manual steps are clinical: reviewing the patient's self-reported medical history for anything that needs a clinical flag, verifying that the care team assignment is appropriate given any complexity in the case, and initiating prior authorization where required. These are the steps that should have a human involved.
+
+Data accuracy improved to 99.1%, measured against a sample audit of EHR records. The improvement comes from eliminating manual re-keying of data that was already in structured form — the system reads directly from the submitted form rather than having a person transcribe it.
+
+Most significantly: the company's daily form processing capacity tripled without adding headcount. The admin team is now handling exception cases and supporting the clinical review steps, rather than spending their day on data entry.

@@ -1,0 +1,58 @@
+---
+title: "Choosing a vector database for production RAG systems"
+excerpt: "Pinecone, Weaviate, pgvector, or Chroma — the right choice depends on your data volume, latency requirements, and existing infrastructure. Here's how we decide."
+date: "2026-03-10"
+author: "Marcus Chen"
+tag: "Infrastructure"
+featured: false
+---
+
+The vector database question comes up in almost every RAG project we build. Teams spend a lot of time on it — often more than it deserves. The reality is that for most production workloads, three of the four major options will work fine, and the choice between them comes down to your existing infrastructure and operational preferences, not raw technical capability.
+
+Here's how we actually think through this decision.
+
+## What RAG requires from a vector database
+
+Before comparing options, it's worth being specific about what a RAG system actually needs from its vector store.
+
+**Approximate nearest neighbor search.** The core operation: given a query vector, return the N most similar vectors in the index. Every vector database does this. The differences are in how fast they do it, how much memory they require, and how they trade off recall (finding the actual nearest neighbors) versus speed (finding approximate ones quickly). For most RAG workloads, the default settings on any of these databases will give you acceptable performance.
+
+**Metadata filtering.** Pure vector similarity isn't enough for most production systems. You typically need to filter by attributes alongside the vector search: only retrieve chunks from documents written in the last 90 days, or only from the customer's tenant, or only from a specific product category. The quality of metadata filtering — and its performance at scale — varies significantly across options.
+
+**Upsert performance.** You need to add and update vectors as your knowledge base changes. How the database handles index updates while still serving queries matters. Some databases rebuild indexes in the background; others block or degrade during large updates. If your knowledge base changes frequently, this is a real operational concern.
+
+## The four options
+
+**Pinecone** is the managed option. You don't run infrastructure — you call their API. Setup is fast, the API is clean, and it works well at moderate scale (up to roughly 10-20M vectors in a single index). The main constraint is cost: Pinecone gets expensive as your vector count grows, and you have limited control over the underlying infrastructure. There's also no self-hosted option — you're dependent on their managed service. For teams that want something working quickly and don't want to think about infrastructure, it's a solid choice. For teams at scale, the cost/control tradeoff usually becomes untenable.
+
+**Weaviate** sits at the other end. It's open-source with an optional managed cloud, supports self-hosting, has a rich schema system that makes metadata filtering genuinely powerful, and handles high query volumes well. It also requires more operational investment: you need to think about deployment, scaling, and index configuration. The GraphQL-based query interface is either a feature or an annoyance depending on your team's familiarity. We use Weaviate when a client has complex metadata requirements or anticipates very high query volume.
+
+**pgvector** is the pragmatic choice for teams already on PostgreSQL. It's a Postgres extension that adds a vector type and approximate nearest neighbor indexes (using HNSW or IVFFlat). The advantage is that you're using infrastructure you already manage, with backup strategies you already have, in a system your team already understands. You can join vector search results with your existing relational data in a single query. The limitation is scale: beyond roughly 5-10M vectors, you'll start to see query latency increase beyond what's acceptable for interactive workloads, depending on your hardware. Under that threshold, it works well and removes an entire category of operational complexity from your stack.
+
+**Chroma** is excellent for local development and prototyping. It runs in-process, requires zero configuration, and has a simple Python API. We use it constantly when building and testing RAG pipelines before a production deployment decision has been made. We have never used Chroma in production. It's not designed for that, and it shows when you try.
+
+## The decision framework
+
+In practice, we make this decision in roughly three questions:
+
+**Are you under 5-10M vectors?** If yes, and you're already on PostgreSQL, use pgvector. You get vector search without adding a new system to operate. The performance is more than adequate for this scale, and you eliminate an entire category of operational complexity.
+
+**Do you need managed infrastructure and simple operations?** If you're not on Postgres, don't want to operate infrastructure, and your data volume won't push Pinecone's costs into unacceptable territory, Pinecone is the right call. It's genuinely simple and reliable.
+
+**Do you have complex metadata requirements or high query volume?** If you need to filter on many attributes simultaneously, or expect queries in the thousands-per-second range, or want the option to self-host at scale, evaluate Weaviate. Expect to invest more time in the setup.
+
+## The operational considerations nobody talks about
+
+Picking the database is the easy part. The operational questions are where teams get surprised:
+
+**Index updates.** When you add a large batch of new documents, how does that affect query latency? HNSW indexes in particular can degrade during bulk inserts. Know the answer before you design your ingestion pipeline.
+
+**Backup strategies.** Vector indexes are often not included in standard backup procedures because teams add them after their initial infrastructure setup. A pgvector database gets backed up automatically with your Postgres backups. A self-hosted Weaviate or Pinecone needs an explicit backup strategy.
+
+**Dimension choices.** The embedding model you use determines your vector dimension (1536 for OpenAI's `text-embedding-3-small`, 3072 for `text-embedding-3-large`, 768 for many open-source models). Dimension directly affects memory usage and cost. Changing your embedding model after you've indexed millions of documents means re-embedding and re-indexing everything. Choose deliberately.
+
+## The database matters less than you think
+
+Here's the honest conclusion: for the vast majority of RAG systems we've built, the vector database choice had almost no impact on the quality of results. What had the most impact were the decisions made earlier in the pipeline: how documents were chunked, what metadata was attached, and how retrieval results were ranked and filtered before being passed to the model.
+
+A mediocre chunking strategy with great metadata filtering will outperform a sophisticated vector database with poor chunking. Get the retrieval logic right. Use the database that fits your infrastructure. Don't spend two weeks evaluating options when the work that actually matters is figuring out why certain query types return irrelevant chunks.

@@ -1,0 +1,455 @@
+@import "tailwindcss";
+
+/* =========================================================
+   PERPETUAL STACK — DESIGN TOKENS
+   All tokens live here (Tailwind v4 @theme syntax).
+   ========================================================= */
+
+@theme {
+  /* ---------------------------------------------------
+     COLORS
+     --------------------------------------------------- */
+
+  /* Base palette */
+  --color-chalk: #F5F2ED;
+  --color-paper: #EBE7E0;
+  --color-graphite: #1A1A1A;
+  --color-soot: #121212;
+
+  /* Brand accent */
+  --color-ember: #E0592A;
+  --color-ember-light: #F0845E;
+  --color-ember-dim: #B84420;
+
+  /* Highlight accent */
+  --color-volt: #C8F035;
+  --color-volt-hover: #D4F55E;
+
+  /* Neutral text tones */
+  --color-muted: #5C5852;
+  --color-subtle: #8A857D;
+
+  /* Dark-section text */
+  --color-on-dark: #F5F2ED;
+  --color-on-dark-muted: #A8A39C;
+
+  /* Semantic */
+  --color-success: #4A8C6F;
+  --color-warning: #C49A3A;
+  --color-error: #C0453A;
+  --color-info: #4A7FA0;
+
+  /* ---------------------------------------------------
+     TYPOGRAPHY — Font families
+     CSS variables are injected by next/font at runtime.
+     --------------------------------------------------- */
+
+  --font-display: var(--font-instrument-serif), Georgia, "Times New Roman", serif;
+  --font-body: var(--font-general-sans), "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "Fira Code", "Source Code Pro", Consolas, monospace;
+
+  /* ---------------------------------------------------
+     TYPOGRAPHY — Fluid type scale
+     Overrides Tailwind's default size tokens.
+     All values use clamp() for viewport-responsive sizing.
+     --------------------------------------------------- */
+
+  --text-xs:   clamp(0.6875rem, 0.65rem + 0.1vw,  0.75rem);
+  --text-sm:   clamp(0.8125rem, 0.78rem + 0.15vw, 0.875rem);
+  --text-base: clamp(0.9375rem, 0.88rem + 0.25vw, 1.0625rem);
+  --text-md:   clamp(1.0625rem, 1rem   + 0.3vw,  1.25rem);
+  --text-lg:   clamp(1.25rem,   1.1rem + 0.6vw,  1.5rem);
+  --text-xl:   clamp(1.5rem,    1.2rem + 1.2vw,  2rem);
+  --text-2xl:  clamp(1.875rem,  1.4rem + 2vw,    2.75rem);
+  --text-3xl:  clamp(2.25rem,   1.6rem + 2.8vw,  3.5rem);
+  --text-hero: clamp(2.75rem,   1.8rem + 4vw,    5rem);
+
+  /* ---------------------------------------------------
+     BORDER RADIUS
+     Overrides Tailwind's default radius tokens.
+     --------------------------------------------------- */
+
+  --radius-sm:   4px;
+  --radius-md:   8px;
+  --radius-lg:   12px;
+  --radius-xl:   16px;
+  --radius-full: 9999px;
+
+  /* ---------------------------------------------------
+     SHADOWS
+     --------------------------------------------------- */
+
+  --shadow-sm:      0 1px 2px  rgb(224 89 42 / 0.06);
+  --shadow-md:      0 4px 12px rgb(224 89 42 / 0.08);
+  --shadow-lg:      0 12px 32px rgb(224 89 42 / 0.10);
+  --shadow-dark-sm: 0 1px 3px  rgb(0 0 0 / 0.30);
+  --shadow-dark-md: 0 4px 16px rgb(0 0 0 / 0.40);
+
+  /* ---------------------------------------------------
+     SPACING — 4 px base unit
+     --space-1 = 4px … --space-40 = 160px
+     --------------------------------------------------- */
+
+  --space-1:  0.25rem;   /* 4px  */
+  --space-2:  0.5rem;    /* 8px  */
+  --space-3:  0.75rem;   /* 12px */
+  --space-4:  1rem;      /* 16px */
+  --space-5:  1.25rem;   /* 20px */
+  --space-6:  1.5rem;    /* 24px */
+  --space-7:  1.75rem;   /* 28px */
+  --space-8:  2rem;      /* 32px */
+  --space-9:  2.25rem;   /* 36px */
+  --space-10: 2.5rem;    /* 40px */
+  --space-11: 2.75rem;   /* 44px */
+  --space-12: 3rem;      /* 48px */
+  --space-14: 3.5rem;    /* 56px */
+  --space-16: 4rem;      /* 64px */
+  --space-18: 4.5rem;    /* 72px */
+  --space-20: 5rem;      /* 80px */
+  --space-24: 6rem;      /* 96px */
+  --space-28: 7rem;      /* 112px */
+  --space-32: 8rem;      /* 128px */
+  --space-36: 9rem;      /* 144px */
+  --space-40: 10rem;     /* 160px */
+
+  /* ---------------------------------------------------
+     MOTION
+     --------------------------------------------------- */
+
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+  --duration-hero: 600ms;
+}
+
+/* =========================================================
+   BASE STYLES
+   ========================================================= */
+
+@layer base {
+  html {
+    font-family: var(--font-body);
+    background-color: var(--color-chalk);
+    color: var(--color-graphite);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    min-height: 100dvh;
+    line-height: 1.6;
+  }
+
+  /* Focus ring — ember colour, only visible for keyboard nav */
+  *:focus-visible {
+    outline: 2px solid var(--color-ember);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* Text selection */
+  ::selection {
+    background-color: var(--color-ember);
+    color: var(--color-chalk);
+  }
+
+  /* Reduce motion for users who prefer it */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Headings default to display font */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    line-height: 1.15;
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+
+  /* Code elements use mono font */
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+  }
+
+  /* Baseline link style */
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  /* Smooth image rendering */
+  img, video {
+    max-width: 100%;
+    height: auto;
+    display: block;
+  }
+
+  /* Remove list styling for nav-context lists */
+  nav ul, nav ol {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+/* =========================================================
+   KEYFRAMES
+   ========================================================= */
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-in-left {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes pulse-ember {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* =========================================================
+   CUSTOM UTILITIES
+   @utility makes these available as Tailwind utility classes.
+   ========================================================= */
+
+/* Section layouts ---------------------------------------- */
+
+@utility section-light {
+  background-color: var(--color-chalk);
+  padding-block: 8rem;
+}
+
+@utility section-dark {
+  background-color: var(--color-soot);
+  padding-block: 8rem;
+  border-top: 1px solid rgb(138 133 125 / 0.12);
+  border-bottom: 1px solid rgb(138 133 125 / 0.12);
+}
+
+@utility section-tinted {
+  background-color: rgb(224 89 42 / 0.04);
+  padding-block: 8rem;
+}
+
+/* Typography utilities ------------------------------------ */
+
+@utility overline {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--color-ember);
+}
+
+@utility prose-body {
+  max-width: 40rem; /* 640px — comfortable reading width */
+}
+
+/* Animation utilities ------------------------------------ */
+
+@utility animate-fade-in {
+  animation: fade-in var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@utility animate-fade-in-up {
+  animation: fade-in-up var(--duration-slow) var(--ease-out-expo) both;
+}
+
+@utility animate-spin-slow {
+  animation: spin 3s linear infinite;
+}
+
+/* Interactive state utilities ----------------------------- */
+
+@utility interactive {
+  transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+  transition-duration: var(--duration-base);
+  transition-timing-function: var(--ease-out-expo);
+}
+
+@utility lift {
+  transition: transform var(--duration-base) var(--ease-out-expo),
+              box-shadow var(--duration-base) var(--ease-out-expo);
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+/* Container variant --------------------------------------- */
+
+@utility container-narrow {
+  max-width: 64rem; /* 1024px */
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+@utility container-wide {
+  max-width: 80rem; /* 1280px */
+  margin-inline: auto;
+  padding-inline: 1.5rem;
+}
+
+/* =========================================================
+   PROSE ARTICLE STYLES
+   Used inside .prose-article on blog post and case study
+   bodies. Scoped to avoid bleeding into other content.
+   ========================================================= */
+
+@layer base {
+  .prose-article h2 {
+    font-family: var(--font-display);
+    font-size: var(--text-xl);
+    font-weight: 400;
+    color: var(--color-graphite);
+    margin-top: 3rem;
+    margin-bottom: 1rem;
+    line-height: 1.3;
+  }
+
+  .prose-article h3 {
+    font-family: var(--font-body);
+    font-size: var(--text-lg);
+    font-weight: 500;
+    color: var(--color-graphite);
+    margin-top: 2rem;
+    margin-bottom: 0.75rem;
+  }
+
+  .prose-article p {
+    margin-bottom: 1.5rem;
+    line-height: 1.6;
+  }
+
+  .prose-article ul {
+    list-style: disc;
+    margin-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose-article ol {
+    list-style: decimal;
+    margin-left: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose-article li {
+    margin-bottom: 0.5rem;
+  }
+
+  .prose-article strong {
+    font-weight: 600;
+  }
+
+  .prose-article code {
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    background: var(--color-paper);
+    padding: 0.125rem 0.375rem;
+    border-radius: 4px;
+    color: var(--color-ember);
+  }
+
+  .prose-article pre {
+    background: var(--color-soot);
+    color: var(--color-on-dark);
+    font-family: var(--font-mono);
+    font-size: var(--text-sm);
+    padding: 1.5rem;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin-bottom: 1.5rem;
+  }
+
+  .prose-article pre code {
+    background: none;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+  }
+
+  .prose-article blockquote {
+    border-left: 2px solid var(--color-ember);
+    padding-left: 1.5rem;
+    font-family: var(--font-display);
+    font-size: var(--text-lg);
+    font-style: italic;
+    color: var(--color-graphite);
+    margin: 2rem 0;
+  }
+
+  .prose-article a {
+    color: var(--color-ember);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-article a:hover {
+    color: var(--color-ember-dim);
+  }
+
+  .prose-article hr {
+    border: none;
+    border-top: 1px solid oklch(85% 0.005 75);
+    margin: 3rem 0;
+  }
+
+  .prose-article img {
+    border-radius: 12px;
+    width: 100%;
+    margin: 2rem 0;
+  }
+}

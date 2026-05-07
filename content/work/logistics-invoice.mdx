@@ -1,0 +1,53 @@
+---
+title: "Invoice matching accuracy: 99.2%"
+excerpt: "A logistics company automated their three-way invoice matching process, cutting processing time from days to minutes and eliminating the error rate that was costing them in disputes."
+date: "2025-12-08"
+industry: "Logistics"
+service: "Workflow Automation"
+featured: false
+metrics:
+  - label: "Matching accuracy"
+    value: "99.2%"
+    unit: ""
+  - label: "Processing time"
+    value: "4 min"
+    unit: "was 2 days"
+  - label: "Disputes eliminated"
+    value: "91%"
+    unit: "reduction"
+  - label: "Invoices/month"
+    value: "12,000"
+    unit: "processed"
+---
+
+## The Challenge
+
+This regional logistics company was processing roughly 12,000 vendor invoices per month. Each invoice needed to be matched against two other documents before payment could be approved: the original purchase order (PO) and the goods receipt record confirming that what was ordered had actually been received. This is standard three-way matching, and it's standard for good reason — it prevents paying for goods that weren't ordered or weren't received.
+
+The problem was execution. The matching process was entirely manual. An accounts payable clerk would pull the invoice, locate the corresponding PO in the procurement system, pull the goods receipt record from the warehouse management system, and manually verify that the quantities, unit prices, and total amounts aligned within acceptable tolerances.
+
+When everything matched, the invoice was approved and queued for payment. When it didn't match — a quantity discrepancy, a price difference, a missing goods receipt — the clerk had to initiate a dispute workflow: contact the vendor, contact the receiving warehouse, track down the discrepancy, and wait for resolution before the invoice could move forward.
+
+Average processing time for a clean invoice was two full business days. Disputed invoices took two to three weeks to resolve. The error rate in the manual matching process was high enough that roughly 30% of disputes turned out to be matching errors — the documents did agree, but the clerk had missed it. That's not a vendor problem. That's a process problem.
+
+## What We Built
+
+We built an automated three-way matching pipeline that processes invoices the moment they arrive, with zero manual steps for clean matches and a structured exception report for anything that needs human review.
+
+When an invoice arrives — whether via email attachment, vendor portal upload, or EDI feed — the pipeline ingests it and extracts the key matching fields: invoice number, vendor ID, PO number references, line items with quantities and unit prices, and total amount. Extraction handles both structured formats (XML, EDI, structured PDFs) and unstructured formats (scanned documents, email-attached PDFs) using a document extraction layer that normalizes all inputs into a consistent internal format.
+
+With the invoice data extracted, the pipeline queries the procurement system for the referenced PO and the warehouse management system for any goods receipts linked to that PO. The three-way match then runs as a deterministic comparison: do the line items on the invoice match the PO within the configured tolerance (typically 1-2% for price variance, exact match for quantity)? Does a corresponding goods receipt exist? Do the quantities received match the quantities invoiced?
+
+Clean matches — invoices where all three documents agree within tolerance — are automatically approved and routed to the payment queue. No human review required. The entire process takes under four minutes.
+
+Exceptions are categorized and routed to the appropriate team. A price variance above tolerance goes to procurement. A missing goods receipt goes to the receiving warehouse. A quantity discrepancy goes to the vendor relationship manager. Each exception arrives as a structured report: here is the invoice, here is the PO, here is the discrepancy, here is who needs to resolve it. The AP team is no longer hunting through three systems to understand what's wrong — they receive a pre-diagnosed exception.
+
+## Results
+
+Matching accuracy improved to 99.2%. The 0.8% exception rate represents genuine discrepancies that need human attention — not matching errors introduced by the manual process. Previously, roughly 30% of disputes were caused by the matching process itself; that source of disputes is now eliminated.
+
+Processing time for clean invoices dropped from two business days to four minutes. The payment cycle for the majority of vendors is now faster, which has improved vendor relationships and made the company more attractive to negotiate with.
+
+Disputes fell 91% in the three months following deployment. Most of that reduction came from eliminating the false disputes the manual process was generating. The remaining disputes are real discrepancies — vendor pricing errors, quantity shortfalls — that are legitimate issues to resolve.
+
+The AP team, which previously spent the majority of their time on routine matching, now spends their time on the exception cases that genuinely need judgment and vendor negotiation. Processing volume is no longer constrained by headcount.

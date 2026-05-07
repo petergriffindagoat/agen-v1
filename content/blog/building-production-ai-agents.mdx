@@ -1,0 +1,137 @@
+---
+title: "Building AI agents that survive production"
+excerpt: "Most AI agents work perfectly in demos and fall apart on day two of production. Here's the failure pattern we see most, and how to design around it."
+date: "2026-04-15"
+author: "Zaid Nadaf"
+tag: "Engineering"
+featured: true
+---
+
+Every AI agent demo looks the same. The founder pulls up a Loom recording, walks through the happy path, and the agent performs flawlessly. Ticket comes in, agent reads it, agent responds correctly, everyone's impressed. You say yes, sign the SOW, and two weeks into production the thing is melting down.
+
+This isn't a technology problem. LLMs are more capable than most people realize. The problem is that building an agent for a demo and building one for production are completely different engineering disciplines, and most teams only figure that out the hard way.
+
+Here's what we see break, and how to design around it.
+
+## The three failure modes
+
+### 1. Hallucination in edge cases
+
+In a demo, you feed the agent the ten most common inputs. Those ten inputs were probably in the training data or are structurally similar to something that was. The model handles them confidently and correctly.
+
+Production is different. Production has the angry customer who writes in all caps with no punctuation, the vendor who submits an invoice in a format you've never seen before, the user who asks a question that sits exactly at the boundary between two categories your prompt is trying to distinguish.
+
+The model doesn't say "I don't know." It says something — and that something is often plausible-sounding nonsense. If your pipeline doesn't catch it, that nonsense becomes an action: a wrong response sent, a wrong record updated, a wrong escalation routed.
+
+The fix isn't better prompting. It's confidence gating. Every response your agent generates should come with an explicit confidence assessment. If the model isn't sure — or if the input looks sufficiently unlike anything in your training distribution — the agent should route to a human rather than guess.
+
+### 2. Tool-call failures that aren't caught
+
+Agents don't just generate text. They call tools: fetch a record from a CRM, update a database row, send an email, create a ticket. Each of those tool calls can fail. The API times out. The record doesn't exist. The write fails because of a schema mismatch. The email service returns a 429.
+
+In most agent implementations we inherit, these failures are handled with a try/catch that logs the error and lets the agent continue. The agent doesn't know the tool call failed. It generates its next response as if the write succeeded. Then you have a response in production that references a state that doesn't actually exist.
+
+Tool-call failures need to be first-class citizens in your agent loop. When a tool call fails, the agent needs to know, needs to retry with backoff if that's appropriate, and needs to route to a fallback path if it's not. "Log and continue" is not error handling.
+
+### 3. State management in multi-step agents
+
+Single-step agents are relatively straightforward: input comes in, agent processes it, output goes out. Multi-step agents are where state management becomes a real problem.
+
+Consider a five-step workflow: read a document, extract key fields, validate the fields against business rules, write the validated data to a database, and send a confirmation. What happens when step four fails? Does the agent retry from the beginning? Does it retry from step four? Does it know which steps already succeeded?
+
+Without explicit state tracking, agents either retry everything from scratch (running steps one through three again unnecessarily, and potentially running into idempotency issues) or they fail silently. We've seen production agents send duplicate confirmation emails because the confirmation step succeeded, then the agent lost track of state, restarted, and sent the confirmation again.
+
+## How to design around these
+
+The mental model that actually works is: treat your agent like a distributed system.
+
+Your agent is making remote calls, managing state, handling partial failures, and working with unreliable external dependencies. Every pattern that distributed systems engineers use applies directly.
+
+**Defensive tool calls.** Before any tool call, validate that the inputs are what you expect. After any tool call, validate that the output is what you expected. Don't assume success because there was no exception.
+
+**Explicit fallback paths.** For every path through your agent loop, define what happens when it fails. Not "log and continue" — an actual fallback: route to human review, send an alert, write the failed input to a dead-letter queue. The fallback is not optional. If you haven't defined it, you've left it to chance.
+
+**State machines, not spaghetti.** Multi-step agents should have explicit state. The state should be persisted somewhere durable. Each step should be idempotent where possible. The agent should be able to resume from a failed step rather than restart from scratch.
+
+## A concrete agent loop with error handling
+
+Here's a simplified TypeScript sketch of an agent loop that takes these principles seriously:
+
+```typescript
+type AgentState = 
+  | { status: 'pending' }
+  | { status: 'classifying' }
+  | { status: 'retrieving'; classification: string }
+  | { status: 'generating'; context: string[] }
+  | { status: 'validating'; draft: string }
+  | { status: 'completed'; response: string }
+  | { status: 'escalated'; reason: string }
+  | { status: 'failed'; error: string; step: string }
+
+async function runAgentLoop(ticketId: string): Promise<AgentState> {
+  let state: AgentState = { status: 'pending' }
+
+  // Step 1: Classify the input
+  try {
+    state = { status: 'classifying' }
+    const classification = await classifyTicket(ticketId)
+    
+    // Gate on confidence — don't guess if the model isn't sure
+    if (classification.confidence < 0.85) {
+      return { status: 'escalated', reason: `Low classification confidence: ${classification.confidence}` }
+    }
+    
+    state = { status: 'retrieving', classification: classification.category }
+  } catch (err) {
+    await persistState(ticketId, { status: 'failed', error: String(err), step: 'classify' })
+    return { status: 'failed', error: String(err), step: 'classify' }
+  }
+
+  // Step 2: Retrieve relevant context
+  let context: string[] = []
+  try {
+    context = await retrieveContext(state.classification)
+    state = { status: 'generating', context }
+  } catch (err) {
+    // Retrieval failure: escalate rather than generate without context
+    return { status: 'escalated', reason: 'KB retrieval failed' }
+  }
+
+  // Step 3: Generate response
+  let draft: string
+  try {
+    draft = await generateResponse(ticketId, state.context)
+    state = { status: 'validating', draft }
+  } catch (err) {
+    await persistState(ticketId, { status: 'failed', error: String(err), step: 'generate' })
+    return { status: 'failed', error: String(err), step: 'generate' }
+  }
+
+  // Step 4: Apply policy rules before sending
+  const policyResult = applyPolicyRules(draft)
+  if (!policyResult.passes) {
+    return { status: 'escalated', reason: `Policy check failed: ${policyResult.reason}` }
+  }
+
+  // Step 5: Send — idempotent check to prevent duplicate sends
+  const alreadySent = await checkIfAlreadySent(ticketId)
+  if (!alreadySent) {
+    await sendResponse(ticketId, draft)
+    await markAsSent(ticketId)
+  }
+
+  state = { status: 'completed', response: draft }
+  await persistState(ticketId, state)
+  return state
+}
+```
+
+This isn't the most elegant code. That's the point. Production agents need explicit failure handling at every step, persistent state so you can audit what happened, confidence gates before actions, and idempotency checks before any side effects.
+
+## Production agents need production engineering
+
+The reason demo agents fail in production is that demos are built by people who are thinking about the model. Production is built by people who are thinking about the system.
+
+The model is the easy part. It's the infrastructure around it — state management, error handling, observability, fallback paths, policy enforcement — that determines whether the thing is still running six weeks after you deploy it.
+
+Building an AI agent that survives production is the same discipline as building any reliable distributed system. The difference is you have an LLM in the middle of the call chain. That changes what the failure modes look like. It doesn't change the fact that you need to design for them.
