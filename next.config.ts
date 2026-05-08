@@ -2,7 +2,6 @@ import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
-  outputFileTracingRoot: '/Users/mrnadaf/Desktop/agen/site-v2',
 
   images: {
     remotePatterns: [

@@ -94,7 +94,8 @@ export function buildMetadata(
    ========================================================= */
 
 export function buildArticleMetadata(post: Post): Metadata {
-  const image = `${siteConfig.url}/og/blog/${post.slug}.png`
+  // Use default OG image as fallback until custom post images are created
+  const image = siteConfig.ogImage
 
   return buildMetadata({
     path: `blog/${post.slug}`,
@@ -167,7 +168,7 @@ export function getArticleSchema(post: Post) {
       '@type': 'WebPage',
       '@id': `${siteConfig.url}/blog/${post.slug}`,
     },
-    image: `${siteConfig.url}/og/blog/${post.slug}.png`,
+    image: siteConfig.ogImage,
     wordCount: Math.round(post.readingTime * 200), // ~200 wpm
     timeRequired: `PT${Math.ceil(post.readingTime)}M`,
   }
