@@ -1,13 +1,7 @@
 'use client'
 
-import {
-  motion,
-  useReducedMotion,
-  useMotionValue,
-  useMotionValueEvent,
-  type MotionValue,
-} from 'framer-motion'
-import { useRef, type ReactNode } from 'react'
+import React from 'react'
+import { motion, useReducedMotion } from 'framer-motion'
 import { Section } from '@/components/layout/section'
 import { Container } from '@/components/layout/container'
 import { Button } from '@/components/ui/button'
@@ -19,75 +13,38 @@ import { Button } from '@/components/ui/button'
 const EASE_OUT = [0.16, 1, 0.3, 1] as const
 
 /* ─────────────────────────────────────────────
-   GRAPH CONSTANTS
+   FLOW NODES
    ───────────────────────────────────────────── */
 
-const NODE_W = 130
-const NODE_H = 54
+const FLOW_NODES = [
+  { id: 'slack',  label: 'Input',      value: 'Slack Message', icon: 'MessageSquare', x: 10, active: false },
+  { id: 'engine', label: 'Processing', value: 'Agent Engine',  icon: 'Cpu',           x: 37, active: true  },
+  { id: 'logic',  label: 'Logic',      value: 'Decision',      icon: 'Layers',        x: 63, active: true  },
+  { id: 'action', label: 'Output',     value: 'Action Taken',  icon: 'Zap',           x: 90, active: false },
+]
 
-const INIT = {
-  slack:  { x: 20,  y: 56 },
-  engine: { x: 190, y: 56 },
-  logic:  { x: 360, y: 56 },
-  action: { x: 530, y: 56 },
-}
+const FLOW_CONNS = [
+  { from: 0, to: 1 },
+  { from: 1, to: 2 },
+  { from: 2, to: 3 },
+]
 
 /* ─────────────────────────────────────────────
-   BEZIER PATH HELPER
+   INLINE ICON SET
    ───────────────────────────────────────────── */
 
-function buildPath(fx: number, fy: number, tx: number, ty: number): string {
-  const dx = tx - fx
-  const dy = ty - fy
-  let sx: number, sy: number, ex: number, ey: number
-  let c1x: number, c1y: number, c2x: number, c2y: number
-
-  if (Math.abs(dx) >= Math.abs(dy) * 0.6) {
-    sx = fx + NODE_W;    sy = fy + NODE_H / 2
-    ex = tx;             ey = ty + NODE_H / 2
-    const off = Math.max(Math.abs(ex - sx) * 0.5, 50)
-    c1x = sx + off; c1y = sy
-    c2x = ex - off; c2y = ey
-  } else {
-    sx = fx + NODE_W / 2; sy = fy + NODE_H
-    ex = tx + NODE_W / 2; ey = ty
-    const off = Math.max(Math.abs(ey - sy) * 0.5, 50)
-    c1x = sx; c1y = sy + off
-    c2x = ex; c2y = ey - off
+function Icon({ name, className }: { name: string; className?: string }) {
+  const icons: Record<string, React.ReactNode> = {
+    MessageSquare: <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />,
+    Cpu:           <path d="M4 10a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM10 8V4M14 8V4M10 16v4M14 16v4M20 10h4M20 14h4M0 10h4M0 14h4" />,
+    Layers:        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />,
+    Zap:           <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />,
   }
 
-  return `M ${sx} ${sy} C ${c1x} ${c1y} ${c2x} ${c2y} ${ex} ${ey}`
-}
-
-/* ─────────────────────────────────────────────
-   CONNECTION LINE
-   ───────────────────────────────────────────── */
-
-interface NodeMV { x: MotionValue<number>; y: MotionValue<number> }
-
-function ConnectionLine({ fromMV, toMV }: { fromMV: NodeMV; toMV: NodeMV }) {
-  const pathRef = useRef<SVGPathElement>(null)
-
-  const getPath = () =>
-    buildPath(fromMV.x.get(), fromMV.y.get(), toMV.x.get(), toMV.y.get())
-
-  const sync = () => pathRef.current?.setAttribute('d', getPath())
-
-  useMotionValueEvent(fromMV.x, 'change', sync)
-  useMotionValueEvent(fromMV.y, 'change', sync)
-  useMotionValueEvent(toMV.x,  'change', sync)
-  useMotionValueEvent(toMV.y,  'change', sync)
-
   return (
-    <path
-      ref={pathRef}
-      d={getPath()}
-      fill="none"
-      stroke="#E0592A"
-      strokeWidth={1.5}
-      strokeOpacity={0.4}
-      strokeLinecap="round"
-    />
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+      {icons[name]}
+    </svg>
   )
 }
 
@@ -97,140 +54,119 @@ function ConnectionLine({ fromMV, toMV }: { fromMV: NodeMV; toMV: NodeMV }) {
 
 function AgentFlowDiagram() {
   const reduced = useReducedMotion()
-  const containerRef = useRef<HTMLDivElement | null>(null)
-
-  /* motion values — one pair per node */
-  const slackX = useMotionValue(INIT.slack.x)
-  const slackY = useMotionValue(INIT.slack.y)
-  const engX   = useMotionValue(INIT.engine.x)
-  const engY   = useMotionValue(INIT.engine.y)
-  const logX   = useMotionValue(INIT.logic.x)
-  const logY   = useMotionValue(INIT.logic.y)
-  const actX   = useMotionValue(INIT.action.x)
-  const actY   = useMotionValue(INIT.action.y)
-
-  const mv = {
-    slack:  { x: slackX, y: slackY },
-    engine: { x: engX,   y: engY   },
-    logic:  { x: logX,   y: logY   },
-    action: { x: actX,   y: actY   },
-  }
-
-  const conns: Array<[NodeMV, NodeMV]> = [
-    [mv.slack, mv.engine],
-    [mv.engine, mv.logic],
-    [mv.logic, mv.action],
-  ]
-
-  function node(
-    pos: NodeMV,
-    entryDelay: number,
-    children: ReactNode,
-  ) {
-    return (
-      <motion.div
-        drag
-        dragMomentum={false}
-        dragConstraints={containerRef}
-        dragElastic={0}
-        style={{
-          x:          pos.x,
-          y:          pos.y,
-          position:   'absolute',
-          top:        0,
-          left:       0,
-          width:      NODE_W,
-          touchAction: 'none',
-        }}
-        initial={reduced ? undefined : { opacity: 0, scale: 0.88 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, delay: reduced ? 0 : entryDelay, ease: EASE_OUT }}
-        whileHover={{ scale: 1.04 }}
-        whileDrag={{ scale: 1.06 }}
-        className="cursor-grab active:cursor-grabbing"
-      >
-        {children}
-      </motion.div>
-    )
-  }
+  const Y = 50
 
   return (
-    <div className="bg-soot rounded-xl p-8 md:p-10 font-mono select-none">
-      {/* Header label */}
-      <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted mb-6">
+    <div className="bg-soot rounded-xl p-6 md:p-8 font-mono select-none">
+      <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted mb-5">
         Agent Architecture
       </div>
 
       {/* Graph canvas */}
-      <div className="overflow-x-auto mb-6">
+      <div className="relative w-full overflow-hidden rounded-lg mb-6" style={{ height: 140 }}>
+        {/* Dot-grid */}
         <div
-          ref={containerRef}
-          className="relative"
-          style={{ width: 680, height: 165 }}
+          className="absolute inset-0"
+          style={{ backgroundImage: 'radial-gradient(rgba(168,163,156,0.14) 1px, transparent 1px)', backgroundSize: '24px 24px' }}
+        />
+        {/* Ember glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-ember/[0.05] blur-[60px] pointer-events-none rounded-full" />
+
+        {/* SVG connections + particles */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+          aria-hidden="true"
         >
-          <svg
-            className="absolute inset-0 pointer-events-none"
-            width="100%"
-            height="100%"
-            style={{ overflow: 'visible' }}
-            aria-hidden="true"
+          <defs>
+            <linearGradient id="heroGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%"   stopColor="rgba(224,89,42,0.12)" />
+              <stop offset="50%"  stopColor="rgba(240,132,94,0.42)" />
+              <stop offset="100%" stopColor="rgba(184,68,32,0.12)" />
+            </linearGradient>
+            <filter id="heroGlow" x="-50%" y="-50%" width="200%" height="200%">
+              <feGaussianBlur stdDeviation="0.8" result="blur" />
+              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+            </filter>
+          </defs>
+
+          {FLOW_CONNS.map((conn, idx) => {
+            const from = FLOW_NODES[conn.from]
+            const to   = FLOW_NODES[conn.to]
+            const mx   = (from.x + to.x) / 2
+            const path = `M ${from.x} ${Y} C ${mx} ${Y}, ${mx} ${Y}, ${to.x} ${Y}`
+            const duration = 2.4 + idx * 0.55
+
+            return (
+              <g key={idx}>
+                <motion.path
+                  id={`hero-path-${idx}`}
+                  d={path}
+                  fill="none"
+                  stroke="url(#heroGrad)"
+                  strokeWidth="0.5"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  whileInView={{ pathLength: 1, opacity: 1 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 1.2, delay: idx * 0.1, ease: 'easeInOut' }}
+                />
+                {!reduced && (
+                  <circle r="0.75" fill="#E0592A" filter="url(#heroGlow)">
+                    <animateMotion
+                      dur={`${duration}s`}
+                      repeatCount="indefinite"
+                      begin={`${idx * 0.4}s`}
+                    >
+                      <mpath href={`#hero-path-${idx}`} />
+                    </animateMotion>
+                  </circle>
+                )}
+              </g>
+            )
+          })}
+        </svg>
+
+        {/* Nodes */}
+        {FLOW_NODES.map((node, i) => (
+          <motion.div
+            key={node.id}
+            className="absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center gap-2"
+            style={{ left: `${node.x}%`, top: '50%' }}
+            initial={reduced ? undefined : { scale: 0, opacity: 0 }}
+            whileInView={{ scale: 1, opacity: 1 }}
+            viewport={{ once: true }}
+            transition={{ type: 'spring', stiffness: 260, damping: 18, delay: i * 0.08 }}
           >
-            {conns.map(([from, to], i) => (
-              <ConnectionLine key={i} fromMV={from} toMV={to} />
-            ))}
-          </svg>
-
-          {/* Slack Message */}
-          {node(mv.slack, 0, (
-            <div className="bg-[#1e1e1e] border border-[oklch(30%_0.005_75)] rounded-md px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted leading-none mb-1">
-                Input
+            <div className="relative">
+              <div
+                className={[
+                  'w-12 h-12 rounded-xl flex items-center justify-center',
+                  node.active
+                    ? 'bg-ember text-on-dark shadow-[0_0_20px_rgba(224,89,42,0.38)]'
+                    : 'bg-[#1e1e1e] text-on-dark-muted border border-[oklch(30%_0.005_75)]',
+                ].join(' ')}
+              >
+                <Icon name={node.icon} className="w-5 h-5" />
               </div>
-              <div className="text-xs text-on-dark font-medium">Slack Message</div>
-            </div>
-          ))}
-
-          {/* Agent Engine — active, pulsing */}
-          {node(mv.engine, 0.1, (
-            <div
-              className="bg-[#1e1e1e] border border-ember rounded-md px-4 py-3 relative"
-              style={{ boxShadow: '0 0 0 1px #E0592A' }}
-            >
-              <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted leading-none mb-1 flex items-center gap-1.5">
+              {node.active && (
                 <span
-                  className="inline-block w-1.5 h-1.5 rounded-full bg-ember flex-shrink-0"
+                  className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-ember border-2 border-soot"
                   style={{ animation: reduced ? 'none' : 'pulse-ember 2s ease-in-out infinite' }}
                   aria-hidden="true"
                 />
-                Processing...
-              </div>
-              <div className="text-xs text-on-dark font-medium">Agent Engine</div>
+              )}
             </div>
-          ))}
-
-          {/* Decision */}
-          {node(mv.logic, 0.2, (
-            <div
-              className="bg-[#1e1e1e] border border-ember rounded-md px-4 py-3"
-              style={{ boxShadow: '0 0 0 1px #E0592A' }}
-            >
-              <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted leading-none mb-1">
-                Logic
+            <div className="text-center">
+              <div className="text-[8px] uppercase tracking-[0.12em] text-on-dark-muted leading-none">
+                {node.label}
               </div>
-              <div className="text-xs text-on-dark font-medium">Decision</div>
-            </div>
-          ))}
-
-          {/* Action Taken */}
-          {node(mv.action, 0.3, (
-            <div className="bg-[#1e1e1e] border border-[oklch(30%_0.005_75)] rounded-md px-4 py-3">
-              <div className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted leading-none mb-1">
-                Output
+              <div className="text-[10px] text-on-dark mt-0.5 whitespace-nowrap">
+                {node.value}
               </div>
-              <div className="text-xs text-on-dark font-medium">Action Taken</div>
             </div>
-          ))}
-        </div>
+          </motion.div>
+        ))}
       </div>
 
       {/* Divider */}
@@ -244,7 +180,11 @@ function AgentFlowDiagram() {
         className="flex items-center gap-6 flex-wrap mb-4"
       >
         <div className="flex items-center gap-2">
-          <span className="inline-block w-1.5 h-1.5 rounded-full bg-ember" aria-hidden="true" />
+          <span
+            className="inline-block w-1.5 h-1.5 rounded-full bg-ember"
+            style={{ animation: reduced ? 'none' : 'pulse-ember 2s ease-in-out infinite' }}
+            aria-hidden="true"
+          />
           <span className="text-[10px] uppercase tracking-[0.12em] text-on-dark-muted">Running</span>
         </div>
         <div className="flex items-center gap-2">
