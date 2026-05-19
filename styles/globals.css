@@ -11,15 +11,15 @@
      --------------------------------------------------- */
 
   /* Base palette */
-  --color-chalk: #F5F2ED;
-  --color-paper: #EBE7E0;
+  --color-chalk: #F4F4F9;
+  --color-paper: #E9E9F0;
   --color-graphite: #1A1A1A;
   --color-soot: #121212;
 
   /* Brand accent */
-  --color-ember: #E0592A;
-  --color-ember-light: #F0845E;
-  --color-ember-dim: #B84420;
+  --color-ember: #4F46E5;
+  --color-ember-light: #818CF8;
+  --color-ember-dim: #3730A3;
 
   /* Highlight accent */
   --color-volt: #C8F035;
@@ -79,9 +79,9 @@
      SHADOWS
      --------------------------------------------------- */
 
-  --shadow-sm:      0 1px 2px  rgb(224 89 42 / 0.06);
-  --shadow-md:      0 4px 12px rgb(224 89 42 / 0.08);
-  --shadow-lg:      0 12px 32px rgb(224 89 42 / 0.10);
+  --shadow-sm:      0 1px 2px  rgb(79 70 229 / 0.06);
+  --shadow-md:      0 4px 12px rgb(79 70 229 / 0.08);
+  --shadow-lg:      0 12px 32px rgb(79 70 229 / 0.10);
   --shadow-dark-sm: 0 1px 3px  rgb(0 0 0 / 0.30);
   --shadow-dark-md: 0 4px 16px rgb(0 0 0 / 0.40);
 
@@ -279,7 +279,7 @@
 }
 
 @utility section-tinted {
-  background-color: rgb(224 89 42 / 0.04);
+  background-color: rgb(79 70 229 / 0.04);
   padding-block: 8rem;
 }
 

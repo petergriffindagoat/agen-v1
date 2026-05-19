@@ -13,21 +13,23 @@ import { cn } from '@/lib/utils'
 function LogoMark({ className }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 28 20"
-      fill="currentColor"
+      viewBox="0 0 24 24"
+      fill="none"
       aria-hidden="true"
-      width="28"
-      height="20"
+      width="24"
+      height="24"
       className={className}
     >
-      {/* Top bar */}
-      <rect x="0" y="0" width="20" height="3.5" />
-      {/* Middle bar - independent/floating */}
-      <rect x="0" y="8.25" width="20" height="3.5" />
-      {/* Bottom bar */}
-      <rect x="0" y="16.5" width="20" height="3.5" />
-      {/* Right connector - links top to bottom only */}
-      <path d="M20 0h5a3 3 0 013 3v14a3 3 0 01-3 3h-5v-3.5h5V3.5h-5V0z" />
+      <rect x="2.5" y="2.5" width="19" height="19"
+            stroke="currentColor" strokeWidth="1.58" strokeLinejoin="miter" strokeLinecap="square"/>
+      <rect x="9.15" y="6.11" width="8.74" height="8.74"
+            stroke="currentColor" strokeWidth="1.58" strokeLinejoin="miter" strokeLinecap="square"/>
+      <line x1="2.5" y1="2.5" x2="9.15" y2="6.11"
+            stroke="currentColor" strokeWidth="1.58" strokeLinecap="butt"/>
+      <line x1="21.5" y1="2.5" x2="17.89" y2="6.11"
+            stroke="currentColor" strokeWidth="1.58" strokeLinecap="butt"/>
+      <line x1="21.5" y1="21.5" x2="17.89" y2="14.85"
+            stroke="currentColor" strokeWidth="1.58" strokeLinecap="butt"/>
     </svg>
   )
 }

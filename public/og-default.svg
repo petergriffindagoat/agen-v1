@@ -1,31 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" fill="none">
+  <defs>
+    <radialGradient id="og-bg" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="100%" stop-color="#121212"/>
+    </radialGradient>
+  </defs>
+
   <!-- Background -->
-  <rect width="1200" height="630" fill="#F5F2ED"/>
+  <rect width="1200" height="630" fill="url(#og-bg)"/>
 
-  <!-- Brand accent line -->
-  <rect x="0" y="0" width="8" height="630" fill="#E0592A"/>
+  <!-- Impossible Depth Mark — S1=180, 46% inner scale, 8% upper-right offset, 1/12 stroke -->
+  <g transform="translate(140, 65)">
+    <!-- Outer square -->
+    <rect x="160" y="160" width="180" height="180"
+          stroke="#4F46E5" stroke-width="15" stroke-linejoin="miter" stroke-linecap="square"/>
+    <!-- Inner square -->
+    <rect x="223" y="194.2" width="82.8" height="82.8"
+          stroke="#4F46E5" stroke-width="15" stroke-linejoin="miter" stroke-linecap="square"/>
+    <!-- Diagonal: top-left corners -->
+    <line x1="160" y1="160" x2="223" y2="194.2"
+          stroke="#4F46E5" stroke-width="15" stroke-linecap="butt"/>
+    <!-- Diagonal: top-right corners -->
+    <line x1="340" y1="160" x2="305.8" y2="194.2"
+          stroke="#4F46E5" stroke-width="15" stroke-linecap="butt"/>
+    <!-- Diagonal: bottom-right corners (bottom-left intentionally absent) -->
+    <line x1="340" y1="340" x2="305.8" y2="277"
+          stroke="#4F46E5" stroke-width="15" stroke-linecap="butt"/>
 
-  <!-- Logo mark -->
-  <g transform="translate(80, 80)">
-    <rect width="80" height="80" rx="12" fill="#E0592A"/>
-    <path d="M30 30 L50 70 L70 30" stroke="#F5F2ED" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="50" cy="78" r="3" fill="#F5F2ED"/>
+    <!-- Wordmark — aligned to inner square optical centre -->
+    <text x="610" y="235.6"
+          font-family="Inter, -apple-system, sans-serif"
+          font-weight="600" font-size="64" fill="#F4F4F9"
+          letter-spacing="0.01em" dominant-baseline="middle">
+      Perpetual Stack
+    </text>
+    <!-- Sub-tagline -->
+    <text x="610" y="295.6"
+          font-family="'JetBrains Mono', monospace"
+          font-size="16" font-weight="700" fill="#818CF8"
+          letter-spacing="0.2em">
+      PRODUCTION-GRADE AUTONOMOUS SYSTEMS
+    </text>
   </g>
-
-  <!-- Text content -->
-  <text x="80" y="240" font-family="system-ui, -apple-system, sans-serif" font-size="64" font-weight="400" fill="#1A1A1A" letter-spacing="-1">
-    Perpetual Stack
-  </text>
-
-  <text x="80" y="310" font-family="system-ui, -apple-system, sans-serif" font-size="36" font-weight="300" fill="#5C5852">
-    AI automation that ships to production
-  </text>
-
-  <!-- Bottom accent -->
-  <rect x="80" y="530" width="120" height="4" fill="#E0592A"/>
-
-  <!-- Domain -->
-  <text x="80" y="570" font-family="monospace" font-size="20" fill="#8A857D" letter-spacing="1">
-    perpetualstack.com
-  </text>
 </svg>

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useRef, useId } from 'react'
+import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 /* ─────────────────────────────────────────────
@@ -79,7 +79,7 @@ function Icon({ name, className }: { name: string; className?: string }) {
 
 /* ─────────────────────────────────────────────
    MOBILE PIPELINE FLOW
-   Vertical flowchart with animated connector dots.
+   Clean vertical timeline — tap a node to expand.
    ───────────────────────────────────────────── */
 
 type NodeDef = (typeof ARCHITECTURE_DATA)['full'][number]
@@ -93,148 +93,120 @@ function MobileLayout({
   selectedNode: string | null
   onSelect: (id: string | null) => void
 }) {
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [cw, setCw] = useState(320)
-  const uid = useId()
-
-  useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
-    setCw(el.offsetWidth)
-    const ro = new ResizeObserver(() => setCw(el.offsetWidth))
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [])
-
-  const ROW_H = 110
-  const LEFT_X  = cw * 0.22
-  const RIGHT_X = cw * 0.78
-  const totalH  = nodes.length * ROW_H
-
-  const paths = nodes.slice(0, -1).map((_, i) => {
-    const fromX = i % 2 === 0 ? LEFT_X : RIGHT_X
-    const toX   = i % 2 === 0 ? RIGHT_X : LEFT_X
-    const fromY = i * ROW_H + ROW_H / 2
-    const toY   = (i + 1) * ROW_H + ROW_H / 2
-    const midY  = (fromY + toY) / 2
-    return `M ${fromX} ${fromY} C ${fromX} ${midY}, ${toX} ${midY}, ${toX} ${toY}`
-  })
-
-  const selectedNodeData = nodes.find(n => n.id === selectedNode)
-
   return (
     <div className="font-mono select-none">
-      <p className="text-[9px] uppercase tracking-[0.12em] text-on-dark-muted pt-5 pb-1 px-5">
-        Agent Architecture
-      </p>
+      {/* Header */}
+      <div className="px-5 pt-5 pb-4 flex items-center justify-between">
+        <p className="text-[9px] uppercase tracking-[0.14em] text-on-dark-muted">
+          Agent Architecture
+        </p>
+        <span className="text-[9px] uppercase tracking-[0.12em] text-on-dark-muted opacity-50">
+          tap to explore
+        </span>
+      </div>
 
-      {/* Diagram */}
-      <div ref={containerRef} className="relative" style={{ height: totalH }}>
-        <svg
-          className="absolute inset-0 w-full h-full pointer-events-none"
-          viewBox={`0 0 ${cw} ${totalH}`}
-          aria-hidden="true"
-        >
-          <defs>
-            <filter id={`${uid}-glow`} x="-100%" y="-100%" width="300%" height="300%">
-              <feGaussianBlur stdDeviation="3" result="blur" />
-              <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-            </filter>
-          </defs>
-
-          {paths.map((d, i) => (
-            <g key={i}>
-              <path d={d} fill="none" stroke="oklch(28% 0.005 75)" strokeWidth="1.5" />
-              <path id={`${uid}-p${i}`} d={d} fill="none" stroke="none" />
-              <circle r="4" fill="#E0592A" filter={`url(#${uid}-glow)`}>
-                <animateMotion
-                  dur={`${1.5 + i * 0.15}s`}
-                  repeatCount="indefinite"
-                  begin={`${i * 0.38}s`}
-                >
-                  <mpath href={`#${uid}-p${i}`} />
-                </animateMotion>
-              </circle>
-            </g>
-          ))}
-        </svg>
-
+      {/* Timeline */}
+      <div className="px-5 pb-2">
         {nodes.map((node, i) => {
           const isSelected = selectedNode === node.id
-          const nodeX = i % 2 === 0 ? LEFT_X : RIGHT_X
-          const nodeY = i * ROW_H + ROW_H / 2
+          const isLast = i === nodes.length - 1
+
           return (
             <motion.div
               key={node.id}
-              initial={{ scale: 0, opacity: 0 }}
-              whileInView={{ scale: 1, opacity: 1 }}
+              initial={{ opacity: 0, x: -10 }}
+              whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              transition={{ type: 'spring', stiffness: 260, damping: 18, delay: i * 0.07 }}
-              className="absolute flex flex-col items-center gap-1.5"
-              style={{ left: nodeX, top: nodeY, transform: 'translate(-50%, -50%)' }}
+              transition={{ duration: 0.35, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] }}
+              className="flex gap-3"
             >
-              <button
-                type="button"
-                onClick={() => onSelect(isSelected ? null : node.id)}
-                className={[
-                  'w-[54px] h-[54px] rounded-xl flex items-center justify-center transition-all duration-[250ms] focus:outline-none focus-visible:ring-2 focus-visible:ring-ember',
-                  isSelected
-                    ? 'bg-ember text-on-dark scale-110 shadow-[0_0_22px_rgba(224,89,42,0.5)]'
-                    : 'bg-[#1e1e1e] text-on-dark-muted border border-[oklch(30%_0.005_75)] hover:border-ember/60 hover:text-on-dark hover:scale-105',
-                ].join(' ')}
-                aria-pressed={isSelected}
-                aria-label={node.label}
-              >
-                <Icon name={node.icon} className="w-5 h-5" />
-              </button>
-              <span
-                className={[
-                  'text-[8px] uppercase tracking-[0.1em] whitespace-nowrap font-mono transition-colors duration-200 text-center leading-tight max-w-[72px]',
-                  isSelected ? 'text-ember' : 'text-on-dark-muted',
-                ].join(' ')}
-              >
-                {node.label}
-              </span>
+              {/* Left: icon + connector line */}
+              <div className="flex flex-col items-center flex-shrink-0" style={{ width: 44 }}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(isSelected ? null : node.id)}
+                  className={[
+                    'w-11 h-11 rounded-xl flex items-center justify-center transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-ember z-10',
+                    isSelected
+                      ? 'bg-ember text-on-dark shadow-[0_0_20px_rgba(79,70,229,0.45)]'
+                      : 'bg-[#1a1a1a] text-on-dark-muted border border-[oklch(28%_0.005_75)] hover:border-ember/50 hover:text-on-dark',
+                  ].join(' ')}
+                  aria-pressed={isSelected}
+                  aria-label={node.label}
+                >
+                  <Icon name={node.icon} className="w-4.5 h-4.5" />
+                </button>
+                {!isLast && (
+                  <div
+                    className="w-px flex-1 my-1"
+                    style={{
+                      minHeight: 20,
+                      background: isSelected
+                        ? 'linear-gradient(to bottom, rgba(79,70,229,0.6), rgba(79,70,229,0.12))'
+                        : 'oklch(25% 0.005 75)',
+                    }}
+                  />
+                )}
+              </div>
+
+              {/* Right: label + expandable description */}
+              <div className={`flex-1 ${isLast ? 'pb-0' : 'pb-1'}`}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(isSelected ? null : node.id)}
+                  className="w-full text-left py-2.5 focus:outline-none"
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={[
+                        'text-[10px] uppercase tracking-[0.1em] font-mono transition-colors duration-200',
+                        isSelected ? 'text-ember' : 'text-on-dark',
+                      ].join(' ')}
+                    >
+                      {node.label}
+                    </span>
+                    <span
+                      className="text-[8px] text-on-dark-muted transition-transform duration-200 leading-none"
+                      style={{ transform: isSelected ? 'rotate(90deg)' : 'rotate(0deg)' }}
+                      aria-hidden="true"
+                    >
+                      ›
+                    </span>
+                  </div>
+                </button>
+
+                <AnimatePresence>
+                  {isSelected && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: 'auto' }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <p className="text-[10px] text-on-dark-muted leading-relaxed font-mono pb-3 pr-2">
+                        {node.description}
+                      </p>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </motion.div>
           )
         })}
       </div>
 
-      {/* Description card for selected node */}
-      <AnimatePresence mode="wait">
-        {selectedNodeData && (
-          <motion.div
-            key={selectedNodeData.id}
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 6 }}
-            transition={{ duration: 0.18 }}
-            className="mx-5 mb-3 p-3 rounded-lg bg-[#181818] border border-ember/20"
-          >
-            <div className="flex items-center gap-2 mb-1.5">
-              <div className="p-1 rounded-md bg-ember/10 text-ember flex-shrink-0">
-                <Icon name={selectedNodeData.icon} className="w-3 h-3" />
-              </div>
-              <span className="text-[9px] uppercase tracking-[0.12em] text-on-dark font-mono">
-                {selectedNodeData.label}
-              </span>
-            </div>
-            <p className="text-[11px] text-on-dark-muted leading-relaxed font-mono">
-              {selectedNodeData.description}
-            </p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="border-t border-[oklch(22%_0.005_75)] mx-5 pb-5 pt-4 flex items-center gap-3">
-        <div className="flex items-center gap-1.5">
-          <span
-            className="w-1.5 h-1.5 rounded-full bg-ember"
-            style={{ animation: 'pulse-ember 2s ease-in-out infinite' }}
-            aria-hidden="true"
-          />
-          <span className="text-[9px] uppercase tracking-[0.12em] text-on-dark font-mono">Active Pipeline</span>
-        </div>
+      {/* Status footer */}
+      <div
+        className="mx-5 mt-3 mb-5 pt-4 flex items-center gap-3"
+        style={{ borderTop: '1px solid oklch(22% 0.005 75)' }}
+      >
+        <span
+          className="w-1.5 h-1.5 rounded-full bg-ember flex-shrink-0"
+          style={{ animation: 'pulse-ember 2s ease-in-out infinite' }}
+          aria-hidden="true"
+        />
+        <span className="text-[9px] uppercase tracking-[0.12em] text-on-dark font-mono">Active Pipeline</span>
         <div className="h-3 w-px bg-[oklch(30%_0.005_75)]" />
         <span className="text-[9px] uppercase tracking-[0.12em] text-on-dark-muted font-mono">42ms avg</span>
       </div>
@@ -294,9 +266,9 @@ export function TechDiagram({ variant = 'full' }: TechDiagramProps) {
         >
           <defs>
             <linearGradient id="connGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%"   stopColor="rgba(224,89,42,0.12)" />
-              <stop offset="50%"  stopColor="rgba(240,132,94,0.42)" />
-              <stop offset="100%" stopColor="rgba(184,68,32,0.12)" />
+              <stop offset="0%"   stopColor="rgba(79,70,229,0.12)" />
+              <stop offset="50%"  stopColor="rgba(129,140,248,0.42)" />
+              <stop offset="100%" stopColor="rgba(55,48,163,0.12)" />
             </linearGradient>
             <filter id="emberGlow" x="-50%" y="-50%" width="200%" height="200%">
               <feGaussianBlur stdDeviation="0.7" result="blur" />
@@ -326,7 +298,7 @@ export function TechDiagram({ variant = 'full' }: TechDiagramProps) {
                   viewport={{ once: true }}
                   transition={{ duration: 1.4, delay: idx * 0.08, ease: 'easeInOut' }}
                 />
-                <circle r="0.65" fill="#E0592A" filter="url(#emberGlow)">
+                <circle r="0.65" fill="#4F46E5" filter="url(#emberGlow)">
                   <animateMotion
                     dur={`${duration}s`}
                     repeatCount="indefinite"
@@ -394,8 +366,8 @@ export function TechDiagram({ variant = 'full' }: TechDiagramProps) {
                   className={[
                     'w-[60px] h-[60px] rounded-xl flex items-center justify-center transition-all duration-[250ms]',
                     selectedNode === node.id
-                      ? 'bg-ember text-on-dark scale-110 shadow-[0_0_22px_rgba(224,89,42,0.45)]'
-                      : 'bg-[#1e1e1e] text-on-dark-muted border border-[oklch(30%_0.005_75)] hover:border-ember/60 hover:text-on-dark hover:scale-105 hover:shadow-[0_0_14px_rgba(224,89,42,0.18)]',
+                      ? 'bg-ember text-on-dark scale-110 shadow-[0_0_22px_rgba(79,70,229,0.45)]'
+                      : 'bg-[#1e1e1e] text-on-dark-muted border border-[oklch(30%_0.005_75)] hover:border-ember/60 hover:text-on-dark hover:scale-105 hover:shadow-[0_0_14px_rgba(79,70,229,0.22)]',
                   ].join(' ')}
                 >
                   <Icon name={node.icon} className="w-[26px] h-[26px]" />
