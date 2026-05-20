@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next'
 
-const BASE_URL = 'https://perpetualstack.com'
+const BASE_URL = 'https://www.perpetualstack.co'
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   /* ── Static routes ─────────────────────────────────────────── */
